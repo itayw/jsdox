@@ -848,13 +848,13 @@ function generateForDir(filename, destination, cb) {
 
   function oneFile(directory, file, cb) {
     var fullpath ;
-    if (!argv.fullpath) {
+    if (!process.argv.fullpath) {
       fullpath = path.join(destination, file);
       fullpath = fullpath.replace(/\.js$/, '.md');
     }
     else
       fullpath = destination;
-    
+
     if (argv.debug) {
       console.log("Generating", fullpath);
     }
