@@ -630,13 +630,13 @@ function generateH1(text) {
 }
 
 function generateH2(text) {
-  return text + '\n' +
+  return '###' + text + '\n';/* +
       '----------------------------------------------------------------------------------------------------'.
-      substr(0, text.length) + '\n';
+      substr(0, text.length) + '\n';*/
 }
 
 function generateH3(text) {
-  return '###' + text + '###\n';
+  return '####' + text + '###\n';
 }
 
 function generateList(list) {
@@ -690,7 +690,7 @@ function generateFunctionsForModule(module, displayName) {
       }
     }
     proto += ')';
-    out += generateH2(proto);
+    out += generateH3(proto);
     if (fn.description) {
       out += generateText(fn.description, true);
     }
@@ -807,7 +807,7 @@ function generateMD(data) {
   }
   var out = '';
   if (data.title) {
-    out += generateH1(data.title);
+    //out += generateH1(data.title);
   }
 
   if (data.author) {
@@ -822,6 +822,9 @@ function generateMD(data) {
   if (data.description) {
     out += generateText(data.description, true);
   }
+
+  if (data.modules.length>0)
+    out+=generateH2('Functions\n');
 
   for (var i = 0; i < data.modules.length; i++) {
     out += generateFunctionsForModule(data.modules[i], (data.modules.length > 1));
@@ -847,8 +850,14 @@ function generateForDir(filename, destination, cb) {
   var error = null;
 
   function oneFile(directory, file, cb) {
-    var fullpath = path.join(destination, file);
-    fullpath = fullpath.replace(/\.js$/, '.md');
+    var fullpath ;
+    if (!process.argv.fullpath) {
+      fullpath = path.join(destination, file);
+      fullpath = fullpath.replace(/\.js$/, '.md');
+    }
+    else
+      fullpath = destination;
+
     if (argv.debug) {
       console.log("Generating", fullpath);
     }
