@@ -1,19 +1,19 @@
 /*
-Copyright (c) 2012 Pascal Belloncle
+ Copyright (c) 2012 Pascal Belloncle
 
-Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
-documentation files (the "Software"), to deal in the Software without restriction, including without limitation the
-rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit
-persons to whom the Software is furnished to do so, subject to the following conditions:
+ Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
+ documentation files (the "Software"), to deal in the Software without restriction, including without limitation the
+ rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit
+ persons to whom the Software is furnished to do so, subject to the following conditions:
 
-The above copyright notice and this permission notice shall be included in all copies or substantial portions of the
-Software.
+ The above copyright notice and this permission notice shall be included in all copies or substantial portions of the
+ Software.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
-WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
-COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
-OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-*/
+ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
+ WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+ COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+ OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ */
 
 var
   util = require('util'),
@@ -27,6 +27,7 @@ var
 var TAGS = {
   "constructor": parseTypeName,
   "author": parseName,
+  "callback": parseTypeName,
   "class": parseName,
   "classdesc": parseText,
   "constant": parseTypeName,
@@ -90,10 +91,10 @@ function parseText(text, tag, lineNo) {
 
 function parseType(text, tag, lineNo) {
   var trimmed = stripSpaces(text);
-  if (trimmed[0] !== '{' && trimmed[trimmed.length-1] !== '}') {
+  if (trimmed[0] !== '{' && trimmed[trimmed.length - 1] !== '}') {
     console.warn(lineNo + ': type format incorrect (' + trimmed + ')');
   }
-  tag.type = trimmed.substr(1, trimmed.length-2);
+  tag.type = trimmed.substr(1, trimmed.length - 2);
 }
 
 function parseTypeName(text, tag, lineNo) {
@@ -120,8 +121,8 @@ function parseTypeText(text, tag, lineNo) {
 }
 
 /*
-  comma separated list
-*/
+ comma separated list
+ */
 function parseList(text, tag, lineNo) {
   tag.value = text.split(',');
   for (var i = 0; i < tag.value.length; i++) {
@@ -147,11 +148,11 @@ function hasTag(text) {
   if (tagIndex === -1) {
     return null;
   }
-  return text.substr(tagIndex+1).split(' ')[0];
+  return text.substr(tagIndex + 1).split(' ')[0];
 }
 
 function stripStarsAndSpaces(text) {
-  return text.replace(/^\s+\**\s*|^\*+\s*|\s+$/g, '');
+  return text.replace(/^\s+\**\s|^\s+\*+|^\*+\s*|\s+$/g, '');
 }
 
 function stripSpaces(text) {
@@ -163,7 +164,7 @@ function parseLine(text, lineNo) {
   if (tag) {
     var result = {};
     result.tag = tag;
-    result.tagValue = stripSpaces(text.substr(text.indexOf('@'+tag) + tag.length + 1));
+    result.tagValue = stripSpaces(text.substr(text.indexOf('@' + tag) + tag.length + 1));
     if (TAGS.hasOwnProperty(tag)) {
       TAGS[tag](result.tagValue, result);
     } else {
@@ -190,7 +191,7 @@ function parseComment(text, lineNo, parse) {
       var parsed = parse(lines[i], lineNo + i);
       if (typeof parsed === 'string') {
         if (result.text.length === 0) {
-         result.text = parsed;
+          result.text = parsed;
         } else {
           result.text += '\n' + parsed;
         }
@@ -219,117 +220,70 @@ function parseComments(ast) {
     walk = w.walk,
     result = [];
 
-    function hasComments(args) {
-      if (args.length) {
-        var arg = args[args.length-1];
-        if (arg && arg.comments_before) {
-          return arg.comments_before;
-        }
-      }
-      return null;
-    }
-
-    // function: { '0': null,
-    //   '1': [],
-    //   '2': [ [ 'return', [ 'num', 0 ] ] ],
-    //   '3':
-    //    { comments_before:
-    //       [ { type: 'comment2',
-    //           value: '*\n    second function without name\n    @returns {String} the result\n  ',
-    //           line: 56,
-    //           col: 2,
-    //           pos: 1169,
-    //           endpos: 1243,
-    //           nlb: true } ] } }
-
-    // [ 'stat',
-    //   [ 'assign',
-    //     true,
-    //     [ 'dot', [ 'name', 'exports' ], 'exported' ],
-    //     [ 'function', null, [ 'param' ], [ [ 'return', [ 'num', 5 ] ] ] ] ],
-    //   comments_before: [ { type: 'comment2',
-    //       value: '*\n * exported with dot notation\n * @param {String} param the parameter\n ',
-    //       line: 36,
-    //       col: 0,
-    //       pos: 612,
-    //       endpos: 688,
-    //       nlb: true } ] ],
-
-    function saveFunctionOrMethodName(name, parsed) {
-      if (name) {
-        var fn = commentHasTag(parsed, 'function');
-        var method = commentHasTag(parsed, 'method');
-        var klass = commentHasTag(parsed, 'class');
-        if (method) {
-          if (!method.name) {
-            method.name = name;
-          }
-        } else if (fn && !fn.name) {
-          fn.name = name;
-        } else if (!klass) {
-          parsed.tags.unshift({
-            tag: "function",
-            tagValue: name,
-            name: name
-          });
-        }
+  function hasComments(args) {
+    if (args.length) {
+      var arg = args[args.length - 1];
+      if (arg && arg.comments_before) {
+        return arg.comments_before;
       }
     }
+    return null;
+  }
 
-    function v() {
-      var comments = hasComments(arguments);
-      if (comments) {
-        var fname = '';
-        var resultAfter = [];
-        var vv = arguments[0];
-        if ((vv.length >= 3) && vv[0] === 'assign' && vv[3]) {
-          // [ 'name', 'global' ]
-          // [ 'dot', [ 'name', 'exports' ], 'exported' ]
-          if (vv[2][0] === 'name') {
-            fname = vv[2][1];
-          } else if (vv[2][0] === 'dot') {
-            fname = vv[2][2];
-          }
-        } else {
-          for (var j = 0; j < vv.length; j++) {
-            if (vv[j][1] && vv[j][1].comments_before) {
-              for (var k = 0; k < vv[j][1].comments_before.length; k++) {
-                var comment2 = vv[j][1].comments_before[k];
-                if (comment2.type === 'comment2') {
-                  var parsed2 = parseComment(comment2.value, comment2.line, parseLine);
-                  if (parsed2) {
-                    saveFunctionOrMethodName(vv[j][0], parsed2);
-                    resultAfter.push(parsed2);
-                  }
-                }
-              }
-            }
-          }
+  // function: { '0': null,
+  //   '1': [],
+  //   '2': [ [ 'return', [ 'num', 0 ] ] ],
+  //   '3':
+  //    { comments_before:
+  //       [ { type: 'comment2',
+  //           value: '*\n    second function without name\n    @returns {String} the result\n  ',
+  //           line: 56,
+  //           col: 2,
+  //           pos: 1169,
+  //           endpos: 1243,
+  //           nlb: true } ] } }
 
+  // [ 'stat',
+  //   [ 'assign',
+  //     true,
+  //     [ 'dot', [ 'name', 'exports' ], 'exported' ],
+  //     [ 'function', null, [ 'param' ], [ [ 'return', [ 'num', 5 ] ] ] ] ],
+  //   comments_before: [ { type: 'comment2',
+  //       value: '*\n * exported with dot notation\n * @param {String} param the parameter\n ',
+  //       line: 36,
+  //       col: 0,
+  //       pos: 612,
+  //       endpos: 688,
+  //       nlb: true } ] ],
 
+  function saveFunctionOrMethodName(name, parsed) {
+    if (name) {
+      var fn = commentHasTag(parsed, 'function');
+      var method = commentHasTag(parsed, 'method');
+      var klass = commentHasTag(parsed, 'class');
+      if (method) {
+        if (!method.name) {
+          method.name = name;
         }
-
-        for (var i = 0; i < comments.length; i++) {
-          var comment = comments[i];
-          if (comment.type === 'comment2') {
-            var parsed = parseComment(comment.value, comment.line, parseLine);
-            if (parsed) {
-              saveFunctionOrMethodName(fname, parsed);
-              result.push(parsed);
-            }
-          }
-        }
-
-        result = result.concat(resultAfter);
+      } else if (fn && !fn.name) {
+        fn.name = name;
+      } else if (!klass) {
+        parsed.tags.unshift({
+          tag: "function",
+          tagValue: name,
+          name: name
+        });
       }
     }
+  }
 
-    function stat() {
+  function v() {
+    var comments = hasComments(arguments);
+    if (comments) {
       var fname = '';
       var resultAfter = [];
       var vv = arguments[0];
-
-      if ((vv.length >= 3) && vv[0] === 'assign' && vv[3] && vv[3].length > 0 && vv[3][0] === 'function') {
+      if ((vv.length >= 3) && vv[0] === 'assign' && vv[3]) {
         // [ 'name', 'global' ]
         // [ 'dot', [ 'name', 'exports' ], 'exported' ]
         if (vv[2][0] === 'name') {
@@ -337,80 +291,127 @@ function parseComments(ast) {
         } else if (vv[2][0] === 'dot') {
           fname = vv[2][2];
         }
-      }
-
-      var comments = hasComments(arguments);
-      if (comments) {
-        for (var i = 0; i < comments.length; i++) {
-          var comment = comments[i];
-          if (comment.type === 'comment2') {
-            var parsed = parseComment(comment.value, comment.line, parseLine);
-            if (parsed) {
-              if (i === comments.length-1) {
-                saveFunctionOrMethodName(fname, parsed);
-              }
-              result.push(parsed);
-            }
-          }
-        }
-      }
-    }
-
-    function defun() {
-      var comments = hasComments(arguments);
-      if (comments) {
-        for (var i = 0; i < comments.length; i++) {
-          var comment = comments[i];
-          if (comment.type === 'comment2') {
-            var parsed = parseComment(comment.value, comment.line, parseLine);
-            if (parsed) {
-              if (i === comments.length-1) {
-                saveFunctionOrMethodName(arguments[0], parsed);
-              }
-              result.push(parsed);
-            }
-          }
-        }
-      }
-    }
-
-    function obj() {
-      if (arguments[0] && arguments[0].length) {
-        for (var i = 0; i < arguments[0].length; i++) {
-          var comments = arguments[0][i].comments_before;
-          if (comments) {
-            for (var j = 0; j < comments.length; j++) {
-              var comment = comments[j];
-              if (comment.type === 'comment2') {
-                var parsed = parseComment(comment.value, comment.line, parseLine);
-                if (parsed) {
-                  if (arguments[0][i][1][0] === 'function') {
-                    if (j === comments.length-1) {
-                      if (!commentHasTag(parsed, 'function')) {
-                        parsed.tags.unshift({
-                          tag: "function",
-                          tagValue: arguments[0][i][0],
-                          name: arguments[0][i][0]
-                        });
-                      }
-                    }
-                  }
-                  result.push(parsed);
+      } else {
+        for (var j = 0; j < vv.length; j++) {
+          if (vv[j][1] && vv[j][1].comments_before) {
+            for (var k = 0; k < vv[j][1].comments_before.length; k++) {
+              var comment2 = vv[j][1].comments_before[k];
+              if (comment2.type === 'comment2') {
+                var parsed2 = parseComment(comment2.value, comment2.line, parseLine);
+                if (parsed2) {
+                  saveFunctionOrMethodName(vv[j][0], parsed2);
+                  resultAfter.push(parsed2);
                 }
               }
             }
           }
         }
+
+
+      }
+
+      for (var i = 0; i < comments.length; i++) {
+        var comment = comments[i];
+        if (comment.type === 'comment2') {
+          var parsed = parseComment(comment.value, comment.line, parseLine);
+          if (parsed) {
+            saveFunctionOrMethodName(fname, parsed);
+            result.push(parsed);
+          }
+        }
+      }
+
+      result = result.concat(resultAfter);
+    }
+  }
+
+  function stat() {
+    var fname = '';
+    var resultAfter = [];
+    var vv = arguments[0];
+
+    if ((vv.length >= 3) && vv[0] === 'assign' && vv[3] && vv[3].length > 0 && vv[3][0] === 'function') {
+      // [ 'name', 'global' ]
+      // [ 'dot', [ 'name', 'exports' ], 'exported' ]
+      if (vv[2][0] === 'name') {
+        fname = vv[2][1];
+      } else if (vv[2][0] === 'dot') {
+        fname = vv[2][2];
       }
     }
 
+    var comments = hasComments(arguments);
+    if (comments) {
+      for (var i = 0; i < comments.length; i++) {
+        var comment = comments[i];
+        if (comment.type === 'comment2') {
+          var parsed = parseComment(comment.value, comment.line, parseLine);
+          if (parsed) {
+            if (i === comments.length - 1) {
+              saveFunctionOrMethodName(fname, parsed);
+            }
+            result.push(parsed);
+          }
+        }
+      }
+    }
+  }
+
+  function defun() {
+    var comments = hasComments(arguments);
+    if (comments) {
+      for (var i = 0; i < comments.length; i++) {
+        var comment = comments[i];
+        if (comment.type === 'comment2') {
+          var parsed = parseComment(comment.value, comment.line, parseLine);
+          if (parsed) {
+            if (i === comments.length - 1) {
+              saveFunctionOrMethodName(arguments[0], parsed);
+            }
+            result.push(parsed);
+          }
+        }
+      }
+    }
+  }
+
+  function obj() {
+    if (arguments[0] && arguments[0].length) {
+      for (var i = 0; i < arguments[0].length; i++) {
+        var comments = arguments[0][i].comments_before;
+        if (comments) {
+          for (var j = 0; j < comments.length; j++) {
+            var comment = comments[j];
+            if (comment.type === 'comment2') {
+              var parsed = parseComment(comment.value, comment.line, parseLine);
+              if (parsed) {
+                if (arguments[0][i][1][0] === 'function') {
+                  if (j === comments.length - 1) {
+                    if (!commentHasTag(parsed, 'function')) {
+                      parsed.tags.unshift({
+                        tag: "function",
+                        tagValue: arguments[0][i][0],
+                        name: arguments[0][i][0]
+                      });
+                    }
+                  }
+                }
+                result.push(parsed);
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
   w.with_walkers({
-      "var": v,
-      "stat": stat,
-      "defun": defun,
-      "object": obj
-    }, function() {
-      return walk(ast);
+    "var": v,
+    "stat": stat,
+    "defun": defun,
+    "object": obj
+  }, function () {
+    return walk(ast);
   });
   return result;
 }
@@ -430,7 +431,7 @@ function parseFile(file, cb) {
       }
 
       result = parseComments(ast);
-    } catch(e) {
+    } catch (e) {
       // console.log(e);
       return cb(e);
     }
@@ -469,28 +470,28 @@ function parseFile(file, cb) {
 //        name: 'null' } ] } ]
 
 /**
-  analyze one file
-*/
+ analyze one file
+ */
 
 function analyze(raw) {
   var result = {
-    functions: [],  // which module, list of params + returns
-    methods: [],  // which class
-    classes: [],  // which module
-    modules: [],
-    global_module: null,
-    global_variables: [],
-    description: "",
-    overview: "",
-    copyright: "",
-    license: "",
-    author: "",
-    version: ""
-  },
-  current_module = null,
-  current_class = null,
-  current_function = null,
-  current_method = null;
+      functions: [],  // which module, list of params + returns
+      methods: [],  // which class
+      classes: [],  // which module
+      modules: [],
+      global_module: null,
+      global_variables: [],
+      description: "",
+      overview: "",
+      copyright: "",
+      license: "",
+      author: "",
+      version: ""
+    },
+    current_module = null,
+    current_class = null,
+    current_function = null,
+    current_method = null;
 
   function initGlobalModule() {
     var global = {};
@@ -544,10 +545,18 @@ function analyze(raw) {
             current_method.params.push(tag);
           }
           break;
+        case 'callback':
+          if (current_function) {
+            current_function.callback.push(tag);
+          } else if (current_method) {
+            current_method.callback.push(tag);
+          }
+          break;
         case 'function':
           var fn = {};
           fn.name = tag.name;
           fn.params = [];
+          fn.callback = [];
           fn.returns = '';
           fn.version = '';
           fn.description = comment.text;
@@ -625,14 +634,15 @@ function analyze(raw) {
 
 function generateH1(text) {
   return text + '\n' +
-      '===================================================================================================='.
+    '===================================================================================================='.
       substr(0, text.length) + '\n';
 }
 
 function generateH2(text) {
-  return '###' + text + '\n';/* +
-      '----------------------------------------------------------------------------------------------------'.
-      substr(0, text.length) + '\n';*/
+  return '###' + text + '\n';
+  /* +
+   '----------------------------------------------------------------------------------------------------'.
+   substr(0, text.length) + '\n';*/
 }
 
 function generateH3(text) {
@@ -652,7 +662,7 @@ function generateCode(code, nl) {
 }
 
 function generateCodeBlock(code, lang) {
-  return '\n```' + lang +'\n' + code + '\n```\n';
+  return '\n```' + lang + '\n' + code + '\n```\n';
 }
 
 function generateLine() {
@@ -676,7 +686,7 @@ function generateEm(text, nl) {
 }
 
 function filterMD(text) {
-  return text.replace(/\[/g, '\\[').replace(/\]/g, '\\]');
+  return text; //text.replace(/\[/g, '\\[').replace(/\]/g, '\\]');
 }
 
 function generateFunctionsForModule(module, displayName) {
@@ -685,15 +695,20 @@ function generateFunctionsForModule(module, displayName) {
     proto += fn.name + '(';
     for (var j = 0; j < fn.params.length; j++) {
       proto += filterMD(fn.params[j].name);
-      if (j !== fn.params.length-1) {
+      if (j !== fn.params.length - 1) {
         proto += ', ';
       }
     }
+
+    //if (fn.callback.length > 0)
+    //  proto += fn.params.length > 0 ? ', callback' : 'callback';
+
     proto += ')';
     out += generateH3(proto);
     if (fn.description) {
       out += generateText(fn.description, true);
     }
+		/*
     if (fn.params.length) {
       out += generateStrong('Parameters', true);
       for (var k = 0; k < fn.params.length; k++) {
@@ -705,6 +720,17 @@ function generateFunctionsForModule(module, displayName) {
         out += ',  ' + generateText(param.value, true);
       }
     }
+    if (fn.callback.length) {
+      out += generateStrong('Callback', true);
+      for (var k = 0; k < fn.callback.length; k++) {
+        var callback = fn.callback[k];
+        out += generateStrong(callback.name);
+        if (callback.type) {
+          out += ':  ' + generateEm(callback.type);
+        }
+        out += ',  ' + generateText(callback.value, true);
+      }
+    }*/
     if (fn.returns) {
       out += generateStrong("Returns", true);
       if (fn.type) {
@@ -712,6 +738,7 @@ function generateFunctionsForModule(module, displayName) {
       }
       out += generateText(fn.returns, true);
     }
+		out += generateLine();
   }
 
   var out = '';
@@ -823,8 +850,8 @@ function generateMD(data) {
     out += generateText(data.description, true);
   }
 
-  if (data.modules.length>0)
-    out+=generateH2('Functions\n');
+ // if (data.modules.length > 0)
+    //out += generateH2('Functions\n');
 
   for (var i = 0; i < data.modules.length; i++) {
     out += generateFunctionsForModule(data.modules[i], (data.modules.length > 1));
@@ -832,14 +859,14 @@ function generateMD(data) {
 
   //out+='\n\n';
 
-  out += generateLine();
+	//out += generateLine();
 
   if (data.copyright) {
     //out += generateEm(/*'©' +*/ data.copyright, true);
   }
 
   if (data.license) {
-    out += generateStrong('License:') +' ' + generateEm(data.license, true);
+   // out += generateStrong('License:') + ' ' + generateEm(data.license, true);
   }
 
   return out;
@@ -850,7 +877,7 @@ function generateForDir(filename, destination, cb) {
   var error = null;
 
   function oneFile(directory, file, cb) {
-    var fullpath ;
+    var fullpath;
     if (!process.argv.fullpath) {
       fullpath = path.join(destination, file);
       fullpath = fullpath.replace(/\.js$/, '.md');
@@ -862,7 +889,7 @@ function generateForDir(filename, destination, cb) {
       console.log("Generating", fullpath);
     }
     waiting++;
-    parseFile(path.join(directory, file), function(err, result) {
+    parseFile(path.join(directory, file), function (err, result) {
       if (err) {
         console.error('Error generating docs for file', file, err);
         waiting--;
@@ -880,7 +907,7 @@ function generateForDir(filename, destination, cb) {
 
       var output = generateMD(analyze(result));
       if (output) {
-        fs.writeFile(fullpath, output, function(err) {
+        fs.writeFile(fullpath, output, function (err) {
           waiting--;
           if (err) {
             console.error('Error generating docs for file', file, err);
@@ -905,12 +932,12 @@ function generateForDir(filename, destination, cb) {
   } else {
     fs.stat(filename, function (err, s) {
       if (!err && s.isDirectory()) {
-        fs.readdir(filename, function(err, files) {
+        fs.readdir(filename, function (err, files) {
           if (err) {
             console.error('Error generating docs for files', filename, err);
             return cb(err);
           }
-          files.forEach(function(file) {
+          files.forEach(function (file) {
             if (file.match(/\.js$/)) {
               oneFile(filename, file, cb);
             }
@@ -922,12 +949,12 @@ function generateForDir(filename, destination, cb) {
 }
 
 function jsdox() {
-  fs.mkdir(argv.output, function(err) {
-    generateForDir(argv._[0], argv.output, function(err) {
+  fs.mkdir(argv.output, function (err) {
+    generateForDir(argv._[0], argv.output, function (err) {
       if (err) {
         console.error(err);
-      // } else {
-      //   console.log("jsdox completed");
+        // } else {
+        //   console.log("jsdox completed");
       }
     });
   });
