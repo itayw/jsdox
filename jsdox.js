@@ -479,6 +479,7 @@ function analyze(raw) {
       methods: [],  // which class
       classes: [],  // which module
       modules: [],
+			members: [],
       global_module: null,
       global_variables: [],
       description: "",
@@ -589,6 +590,7 @@ function analyze(raw) {
           if (current_class) {
             current_class.members.push(tag);
           }
+					result.members.push(tag);
           break;
         case 'return':
         case 'returns':
@@ -629,6 +631,7 @@ function analyze(raw) {
       }
     }
   }
+	//console.log(result);
   return result;
 }
 
@@ -850,8 +853,17 @@ function generateMD(data) {
     out += generateText(data.description, true);
   }
 
- // if (data.modules.length > 0)
-    //out += generateH2('Functions\n');
+	if (data.members.length > 0)
+		out += generateH2('Members\n');
+	for (var i = 0; i < data.members.length; i++) {
+		console.log(data.members[i])
+		out += '`'+data.members[i].name+'`' + ' ' + generateText(data.members[i].value, true);
+	}
+	if (data.members.length > 0)
+	out += generateLine();
+
+	if (data.modules.length > 0 && data.members.length > 0)
+    out += generateH2('Functions\n');
 
   for (var i = 0; i < data.modules.length; i++) {
     out += generateFunctionsForModule(data.modules[i], (data.modules.length > 1));
