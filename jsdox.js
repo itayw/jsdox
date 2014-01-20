@@ -557,7 +557,6 @@ function analyze(raw) {
 					var found = gfound = -1;
 					var fn = {};
 					fn.name = tag.name;
-					console.log('FUNCTION', fn.name);
 					fn.params = [];
 					fn.callback = [];
 					fn.returns = '';
@@ -585,11 +584,9 @@ function analyze(raw) {
 						});
 
 						if (gfound == -1){
-							console.log('global',fn.name);
 							result.global_module.functions.push(fn);
 						}
 						else{
-						console.log('set',gfound, result.global_module.functions[gfound].name, fn.name, fn.params.length)
 							result.global_module.functions[gfound] = fn;
 							//result.global_module.functions[gfound].params= fn.params;
 						}
@@ -657,7 +654,6 @@ function analyze(raw) {
 			}
 		}
 	}
-	//console.log(result);
 	return result;
 }
 
